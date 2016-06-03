@@ -1,0 +1,32 @@
+@font-face { font-family: Norse; src: url('fonts/Norse.otf'); }
+@font-face { font-family: Norse-Bold; font-weight: bold; src: url('fonts/Norse-Bold.otf');}
+
+body{
+  background-color: tan;
+}
+h1{
+  font-family: Norse-Bold;
+  font-size: 3em;
+  width: 450px;
+  display: block;
+  margin: 10px auto;
+}
+
+#playArea{
+  width: 100%;
+  height: 400px;
+  box-shadow: 10px 10px 5px rgba(0,0,0,.6), inset 0px 0px 20px 10px rgba(0,0,0,.6);
+  border: 10px solid transparent;
+  background-image: url(images/background2.png);
+  background-size: 400px 100%;
+  border-image: url(images/border2.jpg) 30 round;
+}
+
+#container{
+  width: 1100px;
+  margin: 0 auto;
+}
+
+#instructions{
+  font-family: 'Skranji', cursive;
+}
