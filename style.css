@@ -1,18 +1,32 @@
 @font-face { font-family: Norse; src: url('fonts/Norse.otf'); }
 @font-face { font-family: Norse-Bold; font-weight: bold; src: url('fonts/Norse-Bold.otf');}
 
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(-360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(-360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(-360deg);}
+}
+
 body{
   background-color: tan;
 }
 h1{
   font-family: Norse-Bold;
   font-size: 3em;
-  width: 450px;
+  width: 600px;
   display: block;
   margin: 10px auto;
 }
 
 #playArea{
+  position: relative;
   width: 100%;
   height: 400px;
   box-shadow: 10px 10px 5px rgba(0,0,0,.6), inset 0px 0px 20px 10px rgba(0,0,0,.6);
@@ -20,6 +34,28 @@ h1{
   background-image: url(images/background2.png);
   background-size: 400px 100%;
   border-image: url(images/border2.jpg) 30 round;
+  overflow: hidden;
+}
+
+#towerRight{
+  position: absolute;
+  bottom: 75px;
+  width: 6%;
+  right: -25px;
+}
+
+#towerLeft{
+  position: absolute;
+  -moz-transform: scaleX(-1);
+  -o-transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+  filter: FlipH;
+  -ms-filter: "FlipH";
+  bottom: 75px;
+  width: 6%;
+  left: -25px;
+
 }
 
 #container{
@@ -30,3 +66,102 @@ h1{
 #instructions{
   font-family: 'Skranji', cursive;
 }
+
+.unit{
+  position: absolute;
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+}
+
+
+/*ANIMATING SPRITES*/
+
+.viking{
+  background-image: url(images/vikingSprites2.png);
+}
+
+.playerTwo{
+  -moz-transform: scaleX(-1);
+  -o-transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+  filter: FlipH;
+  -ms-filter: "FlipH";
+}
+
+.cyclops{
+  background-image: url(images/cyclops.png);
+}
+
+.demons{
+  background-image: url(images/demons.png);
+}
+
+.viking.death{
+  -ms-transform: rotate(70deg); /* IE 9 */
+  -webkit-transform: rotate(70deg); /* Chrome, Safari, Opera */
+  transform: rotate(70deg);
+
+  -webkit-animation-name: spin;
+  -webkit-animation-duration: 1000ms;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-timing-function: linear;
+  -moz-animation-name: spin;
+  -moz-animation-duration: 1000ms;
+  -moz-animation-iteration-count: infinite;
+  -moz-animation-timing-function: linear;
+  -ms-animation-name: spin;
+  -ms-animation-duration: 1000ms;
+  -ms-animation-iteration-count: infinite;
+  -ms-animation-timing-function: linear;
+  -o-transition: rotate(-3600deg);
+}
+
+
+//RAIN
+
+.rain {
+background:#0D343A;
+background:-webkit-gradient(linear,0% 0%,0% 100%, from(rgba(13,52,58,1) ), to(#000000)  );
+background: -moz-linear-gradient(top, rgba(13,52,58,1) 0%, rgba(0,0,0,1) 100%);
+
+overflow:hidden;}
+
+
+.drop {
+  background:-webkit-gradient(linear,0% 0%,0% 100%, from(rgba(13,52,58,1) ), to(rgba(255,255,255,0.6))  );
+  background: -moz-linear-gradient(top, rgba(13,52,58,1) 0%, rgba(255,255,255,.6) 100%);
+  width:1px;
+  height:89px;
+  position: absolute;
+  bottom:200px;
+  -webkit-animation: fall .63s linear infinite;
+  -moz-animation: fall .63s linear infinite;
+
+}
+
+/* animate the drops*/
+@-webkit-keyframes fall {
+  to {margin-top:900px;}
+}
+@-moz-keyframes fall {
+  to {margin-top:900px;}
+}
+
+
+/*Lightning */
+
+.weather{
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 380px;
+    overflow: hidden;
+    margin-top: 12px;
+    margin-bottom: 10px;
+}
+  .chill-lightning-flash{
+      background-color: rgba(255,255,255,.6);
+      transition: opacity .03s ease-out;
+  }

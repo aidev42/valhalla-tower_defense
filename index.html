@@ -10,10 +10,14 @@
 
 <body>
   <div id="container">
-    <h1>VALHALLA: Tower Defense</h1>
+    <h1>VALHALLA: Two Player Tower Defense</h1>
     <!-- Apparently: If your renderings seem distorted, try specifying your width and height attributes explicitly in the <canvas> attributes, and not using CSS. -->
     <div id="playArea" width="1100" height="400">
+      <div class="weather rain">
+      </div>
 
+      <img id="towerLeft" src="images/tower2.png" alt="towerLeft">
+      <img id="towerRight" src="images/tower2.png" alt="towerLeft">
     </div>
     <div id="instructions">
       <h2>Instructions</h2>
@@ -26,7 +30,7 @@
       </h2>
     </div>
   </div>
-
-  <script src = "script.js" async></script>
+  <script src = "scripts/jquery.spritely.js"></script>
+  <script src = "scripts/main.js"></script>
 </body>
 </html>
