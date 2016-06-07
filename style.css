@@ -84,7 +84,7 @@
 
   .hearts{
     position: absolute;
-    width: 70%;
+    width: 68%;
     height: 100%;
     display: inline-block;
   }
@@ -92,13 +92,17 @@
   .logos{
     position: absolute;
     right:0;
-    width: 25%;
+    width: 30%;
     height: 100%;
     display: inline-block;
   }
 
   #playerTwoHUD .logos{
     left: 0;
+  }
+
+  .hearts img{
+    float:left;
   }
 
   #playerTwoHUD .hearts, #playerTwoHUD .hearts img{
@@ -112,9 +116,20 @@
   }
 
   .logos img{
-    max-height: 30px;
+    max-height: 40px;
     padding: 0px 0px;
     margin: 0px 0px;
+    float: left;
+  }
+
+  #playerTwoHUD .logos img{
+    float: right;
+    -moz-transform: scaleX(-1);
+    -o-transform: scaleX(-1);
+    -webkit-transform: scaleX(-1);
+    transform: scaleX(-1);
+    filter: FlipH;
+    -ms-filter: "FlipH";
   }
 
   .fadedlogo{
@@ -131,7 +146,7 @@
     right: -25px;
   }
 
-  #towerLeft{
+  #towerLeft {
     position: absolute;
     -moz-transform: scaleX(-1);
     -o-transform: scaleX(-1);

@@ -33,8 +33,8 @@
   // As game timer increases pace of movement increases, as should drops
   var gameTimer = 0;
   var gameAccelerator = 1;
-  // var music = new Audio("sounds/music.mp3") ;
-  // music.play();
+  var music = new Audio("sounds/music.mp3") ;
+  music.play();
 
   // Each unit will be stored as an object, so here we create the unit property template that is fed into object constructor
   var unitInfo = {
