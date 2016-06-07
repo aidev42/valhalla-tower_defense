@@ -38,6 +38,14 @@
     margin: 10px auto;
   }
 
+  h3{
+    font-family: Norse;
+    color: white;
+    width: 100px;
+    display: block;
+    margin: 0px auto;
+  }
+
   #playArea{
     position: relative;
     width: 100%;
@@ -58,6 +66,61 @@
   #instructions{
     font-family: 'Skranji', cursive;
   }
+
+  .HUD{
+    width: 300px;
+    height: 100px;
+    position: absolute;
+    top: 15px;
+  }
+
+  #playerTwoHUD{
+    right: 50px;
+  }
+
+  #playerOneHUD{
+    left: 50px;
+  }
+
+  .hearts{
+    position: absolute;
+    width: 70%;
+    height: 100%;
+    display: inline-block;
+  }
+
+  .logos{
+    position: absolute;
+    right:0;
+    width: 25%;
+    height: 100%;
+    display: inline-block;
+  }
+
+  #playerTwoHUD .logos{
+    left: 0;
+  }
+
+  #playerTwoHUD .hearts, #playerTwoHUD .hearts img{
+    float: right;
+    right: 0;
+  }
+
+  .hearts img{
+    max-width: 50px;
+    margin: 20px 8px;
+  }
+
+  .logos img{
+    max-height: 30px;
+    padding: 0px 0px;
+    margin: 0px 0px;
+  }
+
+  .fadedlogo{
+    opacity: 0.4;
+  }
+
 /*END General page styling*/
 
 /*BEGIN Play area element styling*/

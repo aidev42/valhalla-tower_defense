@@ -19,15 +19,20 @@
   var playerTwoUnits = [];
   // Array of dead units not yet removed from map entirely
   var deadUnits =[];
-  var p1VikingCooldown = 0;
-  var p1CyclopsCooldown = 0;
-  var p1DemonCooldown = 0;
-  var p2VikingCooldown = 0;
-  var p2CyclopsCooldown = 0;
-  var p2DemonCooldown = 0;
+  var playerOnevikingCooldown = 0;
+  var playerOnecyclopsCooldown = 0;
+  var playerOnedemonCooldown = 0;
+  var playerTwovikingCooldown = 0;
+  var playerTwocyclopsCooldown = 0;
+  var playerTwodemonCooldown = 0;
   // In milliseconds
   var defaultUnitCooldown = 3000;
-
+  // This is infastructure for later powerups
+  var playerOneCooldown = defaultUnitCooldown;
+  var playerTwoCooldown = defaultUnitCooldown;
+  // As game timer increases pace of movement increases, as should drops
+  var gameTimer = 0;
+  var gameAccelerator = 1;
   // var music = new Audio("sounds/music.mp3") ;
   // music.play();
 
@@ -63,68 +68,55 @@
     $playArea.append($newUnit);
     $newUnit.css("left",this.x);
     $newUnit.css("top",this.y);
-    // $newUnit.sprite({fps: 12, no_of_frames: 8});
+    $newUnit.sprite({fps: 12, no_of_frames: 8});
   };
 
   // Now we are ready to get user input. According to key press we update the object template with values unique to that key and then call a function to pass the template to the constructor
   $(document).on('keydown', function(e){
-  console.log(e.keyCode)
-  switch (e.keyCode) {
-    // Player 1's units
-    case 81: //'q' key
-      console.log('q button pressed');
-      if (p1VikingCooldown <= 0){
-        unitInfo.player = 'playerOne';
-        unitInfo.type = 'viking';
-        createUnit();
-      }
-      break;
-    case 87: //'w' key
-      if (p1CyclopsCooldown <= 0){
-        console.log('w button pressed');
-        unitInfo.player = 'playerOne';
-        unitInfo.type = 'cyclops';
-        createUnit();
-      }
-      break;
-    case 69: //'e' key
-      if (p1DemonCooldown <= 0){
-        console.log('e button pressed');
-        unitInfo.player = 'playerOne';
-        unitInfo.type = 'demon';
-        createUnit();
-      }
-      break;
-    // Player 2's units
-    case 73: //'i' key
-      if (p2VikingCooldown <= 0){
-        console.log('i button pressed');
-        unitInfo.player = 'playerTwo';
-        unitInfo.type = 'viking';
-        createUnit();
-      }
-      break;
-    case 79: //'o' key
-      if (p2CyclopsCooldown <= 0){
-        console.log('o button pressed');
-        unitInfo.player = 'playerTwo';
-        unitInfo.type = 'cyclops';
-        createUnit();
-      }
-      break;
-    case 80: //'p' key
-      if (p2DemonCooldown <= 0){
-        console.log('p button pressed');
-        unitInfo.player = 'playerTwo';
-        unitInfo.type = 'demon';
-        createUnit();
-      }
-      break;
+    switch (e.keyCode) {
+      // Player 1's units
+      case 81: //'q' key
+        if (playerOnevikingCooldown <= 0){
+          createUnit('playerOne','viking');
+        }
+        break;
+      case 87: //'w' key
+        if (playerOnecyclopsCooldown <= 0){
+          createUnit('playerOne','cyclops');
+        }
+        break;
+      case 69: //'e' key
+        if (playerOnedemonCooldown <= 0){
+          createUnit('playerOne','demon');
+        }
+        break;
+      // Player 2's units
+      case 73: //'i' key
+        if (playerTwovikingCooldown <= 0){
+          createUnit('playerTwo','viking');
+        }
+        break;
+      case 79: //'o' key
+        if (playerTwocyclopsCooldown <= 0){
+          createUnit('playerTwo','cyclops');
+        }
+        break;
+      case 80: //'p' key
+        if (playerTwodemonCooldown <= 0){
+          createUnit('playerTwo','demon');
+        }
+        break;
     };
   });
 
   // This function is called by each keypress above and runs a new unit through the object constructor and adds it to the array of unit objects on the map
-  function createUnit(){
+  function createUnit(player,type){
+    unitInfo.player = player;
+    unitInfo.type = type;
+    // Need to distinguish here per player if going to add powerups
+    window[player+type+'Cooldown'] += defaultUnitCooldown;
+    $('#'+player+type).attr("class","fadedlogo")
+
     var playerArray = null;
     if (unitInfo.player === 'playerOne'){
       playerArray = playerOneUnits;
@@ -145,36 +137,40 @@
 
   // PUT THIS INTO A PROPER GAME LOOP LATER- Set how often we run these functions in milliseconds
   setInterval(function(){
-  moveUnits();
-  burnTheDead();
-  collisionCheck();
+    moveUnits();
+    burnTheDead();
+    collisionCheck();
+    updateCooldowns();
+    // gameTimer += 20;
+    // gameAccelerator = Math.pow((1+(gameTimer/10000)),1.05)
   }, 20);
 
+  // denis
   function moveUnits(){
     //for each unit currently on map, update the position in the object and update the css
     for (i =0; i < allUnits.length; i++){
       // Player 1's units will move positive pixels, player's 2 unites will move negative so we need a player modifier
-      var playerModifier = function(){
-        return allUnits[i].player === "playerOne" ? 2 : -2
-      }
+      var playerModifier = allUnits[i].player === "playerOne" ? 2 : -2;
+
       // Check for death modifier as well
       var deathModifier = 1;
-      var test = allUnits[i].htmlNode;
-      if (test.hasClass('death')){
+      var htmlElem = allUnits[i].htmlNode;
+      if (htmlElem.hasClass('death')){
         allUnits[i].y += 6;
         // move them y to "fall off" screen when die
         allUnits[i].htmlNode.css("top",allUnits[i].y);
         deathModifier = -2;
       }
-      allUnits[i].x += 1 * playerModifier() * deathModifier;
+      allUnits[i].x += 1 * playerModifier * deathModifier * gameAccelerator;
       allUnits[i].htmlNode.css("left",allUnits[i].x);
+      // allUnits[i].checkCollision (dennis' proposed fix)
     }
   };
 
+  // denis
   function collisionCheck(){
     // Each element is 80 px width, so they are 40px each side of their x-coordinate
     // For each unit, check if player one's, then check if its max x to min x
-
     for (i = 0; i < playerOneUnits.length; i++){
       for (x = 0; x < playerTwoUnits.length; x++){
         if(playerOneUnits[i].x + 40 >= playerTwoUnits[x].x){
@@ -182,19 +178,20 @@
         }
       }
     }
-    // First for all units check if they are playerOne's
-    // for (i =0; i < allUnits.length; i++){
-    //   if (allUnits[i].player === "playerOne" && allUnits[i].status !== "dead"){
-    //   // If so, check it against all units that are playerTwo's
-    //     for (x=0; x<allUnits.length; x++) {
-    //       //If playerOne unit has higher x than playerTwo they would have collided
-    //       if (allUnits[x].player === "playerTwo" && allUnits[i].x + 40 >= allUnits[x].x && allUnits[i].status !== "dead" && allUnits[x].status !== "dead"){
-    //         // There has been a collision so resolve combat
-    //         combat(allUnits[i],allUnits[x])
-    //       }
-    //     }
-    //   }
-    // }
+    // Now splice out all the units to kill
+    // Take them out of each player array, thus letting them still be affect by movement animations but not including in combat checks
+    for (i = 0; i <deadUnits.length;i++){
+      var splicePlayerOne = playerOneUnits.indexOf(deadUnits[i]);
+      var splicePlayerTwo = playerTwoUnits.indexOf(deadUnits[i]);
+      if (splicePlayerOne !== -1){
+        playerOneUnits.splice(splicePlayerOne,1)
+      }
+      else if (splicePlayerTwo !== -1){
+        playerTwoUnits.splice(splicePlayerTwo,1);
+      }
+      else {
+      }
+    }
   }
 
   function combat(playerOneUnit,playerTwoUnit){
@@ -202,7 +199,7 @@
     var playerOneType = playerOneUnit.type;
     var playerTwoType = playerTwoUnit.type;
     if (playerOneType === playerTwoType){
-      // Tie: do nothing
+      // do nothing
     }
     // 3 possibilities now, each with two sub possibilties
     else if (playerOneType === 'viking'){
@@ -236,43 +233,37 @@
     theSlain.htmlNode.addClass('death');
     theSlain.status = 'dead';
     deadUnits.push(theSlain);
-    // Take them out of each player array, thus letting them still be affect by movement animations but not including in combat checks
-    var splicePlayerOne = playerOneUnits.indexOf(theSlain);
-    var splicePlayerTwo = playerTwoUnits.indexOf(theSlain);
-
-    if (splicePlayerOne !== -1){
-      playerOneUnits.splice(splicePlayerOne,1)
-    }
-    else if (splicePlayerTwo !== -1){
-      playerTwoUnits.splice(splicePlayerTwo,1);
-    }
-    else {
-      console.log("Error killing the slain")
-    }
   }
 
   function burnTheDead(){
     for (i =0; i < deadUnits.length; i++){
-      deadUnits[i].deathCounter += 17;
+      deadUnits[i].deathCounter += 20;
       if (deadUnits[i].deathCounter > 1000){
         var spliceAll = allUnits.indexOf(deadUnits[i]);
         allUnits[spliceAll].htmlNode.remove();
         allUnits.splice(spliceAll,1);
         deadUnits.splice(i,1);
         i --;
-        console.log(i+" this number should get to 1")
-        console.log(deadUnits.length+" length")
       }
     }
   }
 
   function updateCooldowns(){
-    // var p1VikingCooldown = 0;
-    // var p1CyclopsCooldown = 0;
-    // var p1DemonCooldown = 0;
-    // var p2VikingCooldown = 0;
-    // var p2CyclopsCooldown = 0;
-    // var p2DemonCooldown = 0;
+    playerOnevikingCooldown = Math.max(0,playerOnevikingCooldown-20);
+    playerOnecyclopsCooldown = Math.max(0,playerOnecyclopsCooldown-20);
+    playerOnedemonCooldown = Math.max(0,playerOnedemonCooldown-20);
+    playerTwovikingCooldown = Math.max(0,playerTwovikingCooldown-20);
+    playerTwocyclopsCooldown = Math.max(0,playerTwocyclopsCooldown-20);
+    playerTwodemonCooldown = Math.max(0,playerTwodemonCooldown-20);
+
+    // Update logos in GUI
+    var updateArray = ['playerOneviking','playerOnecyclops','playerOnedemon','playerTwoviking','playerTwocyclops','playerTwodemon']
+
+    for (i=0;i<updateArray.length;i++){
+      if (window[updateArray[i]+'Cooldown'] === 0){
+        $('#'+updateArray[i]).removeClass("fadedlogo")
+      }
+    }
   }
 // END Unit creation and collision logic
 
@@ -305,7 +296,6 @@
   //Lightning and thunder
     setInterval(function(){
       if( Math.random()<.15){
-        console.log('thunder')
         $('.weather').addClass('chill-lightning-flash');
         // play thunder bolt
         if (Math.random() >.5){
@@ -316,7 +306,6 @@
         thunderBolt.play();
         setInterval(function(){
           if( $('.weather').hasClass('chill-lightning-flash')){
-            console.log('hit this')
             $('.weather').removeClass('chill-lightning-flash')}
           },150);
       }
