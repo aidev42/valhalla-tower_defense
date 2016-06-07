@@ -15,6 +15,8 @@
 
   var $playArea = $('#playArea');
   var allUnits = [];
+  var playerOneUnits = [];
+  var playerTwoUnits = [];
   // Array of dead units not yet removed from map entirely
   var deadUnits =[];
   var p1VikingCooldown = 0;
@@ -26,8 +28,8 @@
   // In milliseconds
   var defaultUnitCooldown = 3000;
 
-  var music = new Audio("sounds/music.mp3") ;
-  music.play();
+  // var music = new Audio("sounds/music.mp3") ;
+  // music.play();
 
   // Each unit will be stored as an object, so here we create the unit property template that is fed into object constructor
   var unitInfo = {
@@ -123,12 +125,16 @@
 
   // This function is called by each keypress above and runs a new unit through the object constructor and adds it to the array of unit objects on the map
   function createUnit(){
+    var playerArray = null;
     if (unitInfo.player === 'playerOne'){
+      playerArray = playerOneUnits;
       unitInfo.x = -10;
     } else{
+      playerArray = playerTwoUnits;
       unitInfo.x = 1040;
     }
     var createdUnit = new Unit(unitInfo);
+    playerArray.push(createdUnit);
     allUnits.push(createdUnit);
     // A new unit has been created, so increase the unitID count
     unitInfo.id ++;
@@ -140,8 +146,8 @@
   // PUT THIS INTO A PROPER GAME LOOP LATER- Set how often we run these functions in milliseconds
   setInterval(function(){
   moveUnits();
-  collisionCheck();
   burnTheDead();
+  collisionCheck();
   }, 20);
 
   function moveUnits(){
@@ -166,19 +172,29 @@
   };
 
   function collisionCheck(){
-    // First for all units check if they are playerOne's
-    for (i =0; i < allUnits.length; i++){
-      if (allUnits[i].player === "playerOne" && allUnits[i].status !== "dead"){
-      // If so, check it against all units that are playerTwo's
-        for (x=0; x<allUnits.length; x++) {
-          //If playerOne unit has higher x than playerTwo they would have collided
-          if (allUnits[x].player === "playerTwo" && allUnits[i].x + 40 >= allUnits[x].x && allUnits[i].status !== "dead" && allUnits[x].status !== "dead"){
-            // There has been a collision so resolve combat
-            combat(allUnits[i],allUnits[x])
-          }
+    // Each element is 80 px width, so they are 40px each side of their x-coordinate
+    // For each unit, check if player one's, then check if its max x to min x
+
+    for (i = 0; i < playerOneUnits.length; i++){
+      for (x = 0; x < playerTwoUnits.length; x++){
+        if(playerOneUnits[i].x + 40 >= playerTwoUnits[x].x){
+          combat(playerOneUnits[i],playerTwoUnits[x])
         }
       }
     }
+    // First for all units check if they are playerOne's
+    // for (i =0; i < allUnits.length; i++){
+    //   if (allUnits[i].player === "playerOne" && allUnits[i].status !== "dead"){
+    //   // If so, check it against all units that are playerTwo's
+    //     for (x=0; x<allUnits.length; x++) {
+    //       //If playerOne unit has higher x than playerTwo they would have collided
+    //       if (allUnits[x].player === "playerTwo" && allUnits[i].x + 40 >= allUnits[x].x && allUnits[i].status !== "dead" && allUnits[x].status !== "dead"){
+    //         // There has been a collision so resolve combat
+    //         combat(allUnits[i],allUnits[x])
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   function combat(playerOneUnit,playerTwoUnit){
@@ -220,16 +236,32 @@
     theSlain.htmlNode.addClass('death');
     theSlain.status = 'dead';
     deadUnits.push(theSlain);
+    // Take them out of each player array, thus letting them still be affect by movement animations but not including in combat checks
+    var splicePlayerOne = playerOneUnits.indexOf(theSlain);
+    var splicePlayerTwo = playerTwoUnits.indexOf(theSlain);
+
+    if (splicePlayerOne !== -1){
+      playerOneUnits.splice(splicePlayerOne,1)
+    }
+    else if (splicePlayerTwo !== -1){
+      playerTwoUnits.splice(splicePlayerTwo,1);
+    }
+    else {
+      console.log("Error killing the slain")
+    }
   }
 
   function burnTheDead(){
     for (i =0; i < deadUnits.length; i++){
       deadUnits[i].deathCounter += 17;
       if (deadUnits[i].deathCounter > 1000){
-        var splice = allUnits.indexOf(deadUnits[i]);
-        allUnits[splice].htmlNode.remove();
-        allUnits.splice(splice,1);
+        var spliceAll = allUnits.indexOf(deadUnits[i]);
+        allUnits[spliceAll].htmlNode.remove();
+        allUnits.splice(spliceAll,1);
         deadUnits.splice(i,1);
+        i --;
+        console.log(i+" this number should get to 1")
+        console.log(deadUnits.length+" length")
       }
     }
   }
