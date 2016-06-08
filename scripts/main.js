@@ -17,11 +17,12 @@
   var playerOneUnits = [];
   var playerTwoUnits = [];
   var deadUnits =[]; // Array of dead units not yet removed from map
-  var playerOneSpawn = -10; // X coordinate of spawn positions
+  var playerOneSpawn = -30; // X coordinate of spawn positions
   var playerTwoSpawn = 1040;
   var gameLoopTime = 20; // Game loop cycle time
   var yAxisPlane = 235; // // Note that Y is fixed since on a flat plane
   var gameInterval = null;
+  var opponent = '';
 
   // Unit movement (values in pixels)
   var aliveXSpeed = 1;
@@ -110,69 +111,102 @@
       switch (e.keyCode) {
         // Player 1's units
         case 81: //'q' key
-          if (playerOnevikingCooldown <= 0){
             createUnit('playerOne','viking');
-          }
           break;
         case 87: //'w' key
-          if (playerOnecyclopsCooldown <= 0){
             createUnit('playerOne','cyclops');
-          }
           break;
         case 69: //'e' key
-          if (playerOnedemonCooldown <= 0){
             createUnit('playerOne','demon');
-          }
-          break;
-        // Player 2's units
-        case 73: //'i' key
-          if (playerTwovikingCooldown <= 0){
-            createUnit('playerTwo','viking');
-          }
-          break;
-        case 79: //'o' key
-          if (playerTwocyclopsCooldown <= 0){
-            createUnit('playerTwo','cyclops');
-          }
-          break;
-        case 80: //'p' key
-          if (playerTwodemonCooldown <= 0){
-            createUnit('playerTwo','demon');
-          }
           break;
       };
+      if (opponent === 'playerTwo'){
+        switch (e.keyCode) {
+          // Player 2's units
+          case 73: //'i' key
+              createUnit('playerTwo','viking');
+            break;
+          case 79: //'o' key
+              createUnit('playerTwo','cyclops');
+            break;
+          case 80: //'p' key
+              createUnit('playerTwo','demon');
+            break;
+        };
+      }
     });
+
+    // BEGIN AI LOGIC
+    function createAIUnits(){
+      if (playerOneUnits.length > 0){
+        var enemyType = playerOneUnits[0].type;
+        if (enemyType === 'viking'){
+          createUnit('playerTwo','demon')
+        }else if (enemyType === 'cyclops'){
+          createUnit('playerTwo','viking')
+        } else{
+          createUnit('playerTwo','cyclops')
+        }
+      }
+      if(Math.random()<.01){
+        var unitRand = Math.random()
+        if (unitRand <= .333){
+          createUnit('playerTwo','viking')
+        } else if (unitRand <= .667){
+          createUnit('playerTwo','cyclops')
+        } else{
+          createUnit('playerTwo','demon')
+        }
+      }
+    }
+
+    // END AI LOGIC
 
     // This function is called by each keypress above and runs a new unit through the object constructor and adds it to the array of unit objects on the map
     function createUnit(player,type){
-      unitInfo.player = player;
-      unitInfo.type = type;
-      // Need to distinguish here per player due to powerups
-      window[player+type+'Cooldown'] += window[player+'Cooldown'];
-      $('#'+player+type).attr("class","fadedlogo")
+      if(window[player+type+'Cooldown'] <= 0){
+        unitInfo.player = player;
+        unitInfo.type = type;
+        // Need to distinguish here per player due to powerups
+        window[player+type+'Cooldown'] += window[player+'Cooldown'];
+        $('#'+player+type).attr("class","fadedlogo")
 
-      var playerArray = null;
-      if (unitInfo.player === 'playerOne'){
-        playerArray = playerOneUnits;
-        unitInfo.x = playerOneSpawn;
-        var createSound = new Audio("sounds/createUnit.wav") ;
-      } else{
-        playerArray = playerTwoUnits;
-        unitInfo.x = playerTwoSpawn;
-        var createSound = new Audio("sounds/createUnit2.wav") ;
+        var playerArray = null;
+        if (unitInfo.player === 'playerOne'){
+          playerArray = playerOneUnits;
+          unitInfo.x = playerOneSpawn;
+          var createSound = new Audio("sounds/createUnit.wav") ;
+        } else{
+          playerArray = playerTwoUnits;
+          unitInfo.x = playerTwoSpawn;
+          var createSound = new Audio("sounds/createUnit2.wav") ;
+        }
+        var createdUnit = new Unit(unitInfo);
+        playerArray.push(createdUnit);
+        allUnits.push(createdUnit);
+        // A new unit has been created, so increase the unitID count
+        unitInfo.id ++;
+        createSound.play()
       }
-      var createdUnit = new Unit(unitInfo);
-      playerArray.push(createdUnit);
-      allUnits.push(createdUnit);
-      // A new unit has been created, so increase the unitID count
-      unitInfo.id ++;
-      createSound.play()
     }
   // 2.1 END UNIT CREATION
 
-///////////////////////// END INITIAL SETUP//////////////////////
+/////////////////////// END INITIAL SETUP//////////////////////
 
-///////////////////////// BEGIN GAME LOOP//////////////////////
+/////////////////////// BEGIN GAME LOOP//////////////////////
+$('#twoPlayerButton').one('click', function(){
+  $('#opponentSelect').addClass('hidden');
+  $('#instructionsIMG').removeClass('hidden');
+  opponent = 'playerTwo'
+})
+
+$('#computerPlayerButton').one('click', function(){
+  $('#opponentSelect').addClass('hidden');
+  $('#instructionsIMG').removeClass('hidden');
+  opponent = 'computer'
+  playerTwoCooldown = 1000;
+})
+
 $('#instructionsIMG').one('click', function (){
   $('#instructionsIMG').addClass('hidden');
   $('#playArea').removeClass('hidden');
@@ -185,6 +219,9 @@ $('#instructionsIMG').one('click', function (){
 })
 
   function gameLoop(){
+    if(opponent ==='computer'){
+      createAIUnits();
+    }
     moveUnits(); // 2.1 move existing units on map
     removeDeadUnits(); // 2.2 remove dead units
     collisionCheck(); // 2.3 check for collision of units and tower
@@ -196,7 +233,7 @@ $('#instructionsIMG').one('click', function (){
     gameAccelerator = Math.pow((1+(gameTimer/10000)),1.05)
   }
 
-///////////////////////// END GAME LOOP/////////////////////////
+/////////////////////// END GAME LOOP/////////////////////////
 
 
 //////////////BEGIN GAME LOOP FUNCTIONS AND LOGIC////////////////////
@@ -373,7 +410,7 @@ $('#instructionsIMG').one('click', function (){
       }
     }
 
-    document.getElementById("resetButton").addEventListener("click", function(){
+    $('#resetButton').on('click', function(){
       // Delete all nodes
       for (i = 0; i < allUnits.length; i++){
         allUnits[i].htmlNode.remove();

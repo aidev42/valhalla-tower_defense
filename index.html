@@ -7,13 +7,18 @@
   <link rel="stylesheet" href="style.css">
   <link href='https://fonts.googleapis.com/css?family=Skranji' rel='stylesheet' type='text/css'>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src = "scripts/jquery.spritely.js"></script>
 </head>
 
 <body>
   <div id="container">
     <h1>VALHALLA: Two Player Tower Defense</h1>
     <!-- Apparently: If your renderings seem distorted, try specifying your width and height attributes explicitly in the <canvas> attributes, and not using CSS. -->
-    <img id="instructionsIMG" src="images/instructions.png" width="1100" height="400">
+     <div id="opponentSelect" width="1100" height="400">
+      <input id="twoPlayerButton" class="btn btn-default" type="submit" value="Two Players">
+      <input id="computerPlayerButton" class="btn btn-default" type="submit" value="Play Against Computer">
+    </div>
+    <img id="instructionsIMG" class="hidden" src="images/instructions.png" width="1100" height="400">
     <div id="playArea" class="hidden" width="1100" height="400">
       <div class="weather rain">
       </div>
@@ -59,7 +64,6 @@
       </h2>
     </div>
   </div>
-  <script src = "scripts/jquery.spritely.js"></script>
   <script src = "scripts/main.js"></script>
 </body>
 </html>

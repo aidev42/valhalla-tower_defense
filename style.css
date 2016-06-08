@@ -47,7 +47,7 @@
     top: 100px;
   }
 
-#menu .btn{
+.btn{
   width: 30%;
   display: block;
   margin: 0 auto;
@@ -55,7 +55,11 @@
   font-size: 2em;
 }
 
-  #playArea, #instructionsIMG{
+#opponentSelect .btn:first-child{
+  margin-top: 100px;
+}
+
+  #playArea, #instructionsIMG, #opponentSelect{
     position: relative;
     width: 100%;
     height: 400px;
