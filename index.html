@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>VALHALLA: Tower Defense</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
   <link rel="stylesheet" href="style.css">
   <link href='https://fonts.googleapis.com/css?family=Skranji' rel='stylesheet' type='text/css'>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
@@ -12,14 +13,18 @@
   <div id="container">
     <h1>VALHALLA: Two Player Tower Defense</h1>
     <!-- Apparently: If your renderings seem distorted, try specifying your width and height attributes explicitly in the <canvas> attributes, and not using CSS. -->
-    <div id="playArea" width="1100" height="400">
+    <img id="instructionsIMG" src="images/instructions.png" width="1100" height="400">
+    <div id="playArea" class="hidden" width="1100" height="400">
       <div class="weather rain">
+      </div>
+      <div id="menu" class="hidden">
+        <input id="resetButton" class="btn btn-default" type="submit" value="Play Again">
       </div>
       <div id="playerOneHUD" class="HUD">
         <div class="hearts">
-          <img id="p1h1" src="images/hearts.png">
-          <img id="p1h2" src="images/hearts.png">
           <img id="p1h3" src="images/hearts.png">
+          <img id="p1h2" src="images/hearts.png">
+          <img id="p1h1" src="images/hearts.png">
         </div>
         <div class="logos">
           <img id="playerOneviking" src="images/vikingHUD.png">
@@ -34,9 +39,9 @@
           <img id="playerTwodemon" src="images/demonHUD.png">
         </div>
         <div class="hearts">
-          <img id="p2h1" src="images/hearts.png">
-          <img id="p2h2" src="images/hearts.png">
           <img id="p2h3" src="images/hearts.png">
+          <img id="p2h2" src="images/hearts.png">
+          <img id="p2h1" src="images/hearts.png">
         </div>
         </div>
 

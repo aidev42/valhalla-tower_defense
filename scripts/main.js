@@ -9,268 +9,471 @@
 5. sound effects
 */
 
-// 2.1 BEGIN Unit creation
+//////////////////// BEGIN DECLARE VARIABLES ///////////////////
 
-  // First create global variables for the playArea (so only have to jQuery reference once) and an array to more contain all current units on the map
-
+  // General items
   var $playArea = $('#playArea');
   var allUnits = [];
   var playerOneUnits = [];
   var playerTwoUnits = [];
-  // Array of dead units not yet removed from map entirely
-  var deadUnits =[];
+  var deadUnits =[]; // Array of dead units not yet removed from map
+  var playerOneSpawn = -10; // X coordinate of spawn positions
+  var playerTwoSpawn = 1040;
+  var gameLoopTime = 20; // Game loop cycle time
+  var yAxisPlane = 235; // // Note that Y is fixed since on a flat plane
+  var gameInterval = null;
+
+  // Unit movement (values in pixels)
+  var aliveXSpeed = 1;
+  var deathFallSpeed = 6;
+  var deathXSpeedModifier = 2; // Multiple of alive speed for when units die and are "thrown"
+
+  // Unit collision and combat
+  var halfSpriteWidth = 40; // Offset x when checking for collisions
+  var deadExpireTime = 1000; // When to remove the dead
+  var playerOneDamage = 0; //playerOne's tower damage
+  var playerTwoDamage = 0;
+
+  // Unit creation cooldowns
   var playerOnevikingCooldown = 0;
   var playerOnecyclopsCooldown = 0;
   var playerOnedemonCooldown = 0;
   var playerTwovikingCooldown = 0;
   var playerTwocyclopsCooldown = 0;
   var playerTwodemonCooldown = 0;
-  // In milliseconds
-  var defaultUnitCooldown = 3000;
-  // This is infastructure for later powerups
+  var defaultUnitCooldown = 1500;
+
+  // Powerups
+  var powerupArray = [];
+  var powerupSpawnMinX = 190;
+  var powerupSpawnMaxX = 840;
   var playerOneCooldown = defaultUnitCooldown;
   var playerTwoCooldown = defaultUnitCooldown;
-  // As game timer increases pace of movement increases, as should drops
+  var chanceOfPowerup = .001;
+  var powerupBonus = .95; //A percentage of existing cooldown
   var gameTimer = 0;
-  var gameAccelerator = 1;
+  var gameAccelerator = 1; // As game timer increases pace of unit movements and powerup drops accelerates
+
+  //Static sound effects
+  var captureSound = new Audio("sounds/capture.wav") ;
+  var cooldownOver = new Audio("sounds/cooldownOver.wav")
+  var powerupSound = new Audio("sounds/powerup.wav")
+  var getPowerup = new Audio("sounds/getPowerup.wav")
+
+  // Weather effects
+  var numberRainDrops = 600
+    // These define "spawn range" of raindrops
+    var leftRainLimit = 0
+    var rightRainLimit = 1100
+    var bottomRainLimit = -1000
+    var topRainLimit = 1000
+  var chanceOfLightning = .15
+  var freqOfLightningCheck = 1000
+  var durOfLightingFlash = 150
+//////////////////////////END DECLARE VARIABLES/////////////////////
+
+///////////////////////// BEGIN INITIAL SETUP//////////////////////
+
+  // 2.1 BEGIN UNIT CREATION
+    // Each unit will be stored as an object, so here we create the unit property template that is later fed into object constructor
+    var unitInfo = {
+      id: 0,
+      player: '',
+      type: '',
+      x: 0,
+      y: yAxisPlane,
+      status: 'alive',
+      deathCounter: 0 // Used to remove a sprite after its death
+    };
+
+    // The object constructor creates the units as objects, creates an hmtl node via jquery, and ties the two together
+    var Unit = function (unitInfo) {
+      var $newUnit = $('<div class="unit"></div>');
+      $newUnit.addClass(unitInfo.type);
+      $newUnit.addClass(unitInfo.player);
+      this.id = unitInfo.id;
+      this.player = unitInfo.player;
+      this.type = unitInfo.type;
+      this.x = unitInfo.x;
+      this.y = unitInfo.y;
+      this.status = unitInfo.status;
+      this.deathCounter = unitInfo.deathCounter;
+      this.htmlNode = $newUnit; // This ties the specific html node to this particular object, thus allowing us to refer to exact html node by object
+      $playArea.append($newUnit); // Append the new element to the playArea and position it at starting point
+      $newUnit.css("left",this.x);
+      $newUnit.css("top",this.y);
+      $newUnit.sprite({fps: 12, no_of_frames: 8}); //using 'Spritely' plugin
+    };
+
+    // Now we are ready to get user input. According to key press we update the object template with values unique to that key and then call a function to pass the template to the constructor
+    $(document).on('keydown', function(e){
+      switch (e.keyCode) {
+        // Player 1's units
+        case 81: //'q' key
+          if (playerOnevikingCooldown <= 0){
+            createUnit('playerOne','viking');
+          }
+          break;
+        case 87: //'w' key
+          if (playerOnecyclopsCooldown <= 0){
+            createUnit('playerOne','cyclops');
+          }
+          break;
+        case 69: //'e' key
+          if (playerOnedemonCooldown <= 0){
+            createUnit('playerOne','demon');
+          }
+          break;
+        // Player 2's units
+        case 73: //'i' key
+          if (playerTwovikingCooldown <= 0){
+            createUnit('playerTwo','viking');
+          }
+          break;
+        case 79: //'o' key
+          if (playerTwocyclopsCooldown <= 0){
+            createUnit('playerTwo','cyclops');
+          }
+          break;
+        case 80: //'p' key
+          if (playerTwodemonCooldown <= 0){
+            createUnit('playerTwo','demon');
+          }
+          break;
+      };
+    });
+
+    // This function is called by each keypress above and runs a new unit through the object constructor and adds it to the array of unit objects on the map
+    function createUnit(player,type){
+      unitInfo.player = player;
+      unitInfo.type = type;
+      // Need to distinguish here per player due to powerups
+      window[player+type+'Cooldown'] += window[player+'Cooldown'];
+      $('#'+player+type).attr("class","fadedlogo")
+
+      var playerArray = null;
+      if (unitInfo.player === 'playerOne'){
+        playerArray = playerOneUnits;
+        unitInfo.x = playerOneSpawn;
+        var createSound = new Audio("sounds/createUnit.wav") ;
+      } else{
+        playerArray = playerTwoUnits;
+        unitInfo.x = playerTwoSpawn;
+        var createSound = new Audio("sounds/createUnit2.wav") ;
+      }
+      var createdUnit = new Unit(unitInfo);
+      playerArray.push(createdUnit);
+      allUnits.push(createdUnit);
+      // A new unit has been created, so increase the unitID count
+      unitInfo.id ++;
+      createSound.play()
+    }
+  // 2.1 END UNIT CREATION
+
+///////////////////////// END INITIAL SETUP//////////////////////
+
+///////////////////////// BEGIN GAME LOOP//////////////////////
+$('#instructionsIMG').one('click', function (){
+  $('#instructionsIMG').addClass('hidden');
+  $('#playArea').removeClass('hidden');
   var music = new Audio("sounds/music.mp3") ;
   music.play();
+  // Make it rain
+  createRain();
+  gameInterval = setInterval(gameLoop, gameLoopTime);
+  var thunderAndLightningInterval = setInterval(thunderAndLightning,freqOfLightningCheck);
+})
 
-  // Each unit will be stored as an object, so here we create the unit property template that is fed into object constructor
-  var unitInfo = {
-    id: 0,
-    player: '',
-    type: '',
-    x: 0,
-    // Note that Y is always 280 since we are on a flat plane
-    y: 260,
-    //Currently status is not used for anything, but will be used to animate the sprites: ie moving, fighting and dying
-    status: 'alive',
-    // Used to identify when to remove a sprite after its death
-    deathCounter: 0
-  };
+  function gameLoop(){
+    moveUnits(); // 2.1 move existing units on map
+    removeDeadUnits(); // 2.2 remove dead units
+    collisionCheck(); // 2.3 check for collision of units and tower
+    captureCheck(); // 2.3.x
+    checkForWinner(); // 2.4 if winner declare and reset
+    updateCooldowns(); // 2.5 update cooldowns
+    placePowerups(); // 2.6 randomly add powerups
+    gameTimer += gameLoopTime;
+    gameAccelerator = Math.pow((1+(gameTimer/10000)),1.05)
+  }
 
-  // The object constructor creates the units as objects, craetes an hmtl node via jquery, and ties the two together
-  var Unit = function (unitInfo) {
-    var $newUnit = $('<div class="unit"></div>');
-    $newUnit.addClass(unitInfo.type);
-    $newUnit.addClass(unitInfo.player);
-    this.id = unitInfo.id;
-    this.player = unitInfo.player;
-    this.type = unitInfo.type;
-    this.x = unitInfo.x;
-    this.y = unitInfo.y;
-    this.status = unitInfo.status;
-    this.deathCounter = unitInfo.deathCounter;
-    // This ties the specific html node to this particular object, thus allowing us to refer to exact html node by object
-    this.htmlNode = $newUnit;
-    // Append the new element to the playArea and position it at starting point
-    $playArea.append($newUnit);
-    $newUnit.css("left",this.x);
-    $newUnit.css("top",this.y);
-    $newUnit.sprite({fps: 12, no_of_frames: 8});
-  };
+///////////////////////// END GAME LOOP/////////////////////////
 
-  // Now we are ready to get user input. According to key press we update the object template with values unique to that key and then call a function to pass the template to the constructor
-  $(document).on('keydown', function(e){
-    switch (e.keyCode) {
-      // Player 1's units
-      case 81: //'q' key
-        if (playerOnevikingCooldown <= 0){
-          createUnit('playerOne','viking');
+
+//////////////BEGIN GAME LOOP FUNCTIONS AND LOGIC////////////////////
+
+  //// BEGIN 2.1 Move Units
+    // denis
+    function moveUnits(){
+      //for each unit currently on map, update the position in the object and update the css
+      for (i =0; i < allUnits.length; i++){
+        // Player 1's units will move positive pixels, player's 2 unites will move negative so we need a player modifier
+        var playerModifier = allUnits[i].player === "playerOne" ? 1 : -1;
+
+        // Check for death modifier as well, assume not dead
+        var htmlElem = allUnits[i].htmlNode;
+        var deathModifier = 1;
+        if (htmlElem.hasClass('death')){
+          allUnits[i].y += deathFallSpeed;
+          // move them y to "fall off" screen when die
+          allUnits[i].htmlNode.css("top",allUnits[i].y);
+          deathModifier = -deathXSpeedModifier;
         }
-        break;
-      case 87: //'w' key
-        if (playerOnecyclopsCooldown <= 0){
-          createUnit('playerOne','cyclops');
-        }
-        break;
-      case 69: //'e' key
-        if (playerOnedemonCooldown <= 0){
-          createUnit('playerOne','demon');
-        }
-        break;
-      // Player 2's units
-      case 73: //'i' key
-        if (playerTwovikingCooldown <= 0){
-          createUnit('playerTwo','viking');
-        }
-        break;
-      case 79: //'o' key
-        if (playerTwocyclopsCooldown <= 0){
-          createUnit('playerTwo','cyclops');
-        }
-        break;
-      case 80: //'p' key
-        if (playerTwodemonCooldown <= 0){
-          createUnit('playerTwo','demon');
-        }
-        break;
+        allUnits[i].x += aliveXSpeed * playerModifier * deathModifier * gameAccelerator;
+        allUnits[i].htmlNode.css("left",allUnits[i].x);
+        // allUnits[i].checkCollision (dennis' proposed fix)
+      }
     };
-  });
+  /// END 2.1 Move Units
 
-  // This function is called by each keypress above and runs a new unit through the object constructor and adds it to the array of unit objects on the map
-  function createUnit(player,type){
-    unitInfo.player = player;
-    unitInfo.type = type;
-    // Need to distinguish here per player if going to add powerups
-    window[player+type+'Cooldown'] += defaultUnitCooldown;
-    $('#'+player+type).attr("class","fadedlogo")
-
-    var playerArray = null;
-    if (unitInfo.player === 'playerOne'){
-      playerArray = playerOneUnits;
-      unitInfo.x = -10;
-    } else{
-      playerArray = playerTwoUnits;
-      unitInfo.x = 1040;
-    }
-    var createdUnit = new Unit(unitInfo);
-    playerArray.push(createdUnit);
-    allUnits.push(createdUnit);
-    // A new unit has been created, so increase the unitID count
-    unitInfo.id ++;
-  }
-// END Unit Creation
-
-// 2.2 BEGIN Unit movement and collision (battle and win) logic
-
-  // PUT THIS INTO A PROPER GAME LOOP LATER- Set how often we run these functions in milliseconds
-  setInterval(function(){
-    moveUnits();
-    burnTheDead();
-    collisionCheck();
-    updateCooldowns();
-    // gameTimer += 20;
-    // gameAccelerator = Math.pow((1+(gameTimer/10000)),1.05)
-  }, 20);
-
-  // denis
-  function moveUnits(){
-    //for each unit currently on map, update the position in the object and update the css
-    for (i =0; i < allUnits.length; i++){
-      // Player 1's units will move positive pixels, player's 2 unites will move negative so we need a player modifier
-      var playerModifier = allUnits[i].player === "playerOne" ? 2 : -2;
-
-      // Check for death modifier as well
-      var deathModifier = 1;
-      var htmlElem = allUnits[i].htmlNode;
-      if (htmlElem.hasClass('death')){
-        allUnits[i].y += 6;
-        // move them y to "fall off" screen when die
-        allUnits[i].htmlNode.css("top",allUnits[i].y);
-        deathModifier = -2;
-      }
-      allUnits[i].x += 1 * playerModifier * deathModifier * gameAccelerator;
-      allUnits[i].htmlNode.css("left",allUnits[i].x);
-      // allUnits[i].checkCollision (dennis' proposed fix)
-    }
-  };
-
-  // denis
-  function collisionCheck(){
-    // Each element is 80 px width, so they are 40px each side of their x-coordinate
-    // For each unit, check if player one's, then check if its max x to min x
-    for (i = 0; i < playerOneUnits.length; i++){
-      for (x = 0; x < playerTwoUnits.length; x++){
-        if(playerOneUnits[i].x + 40 >= playerTwoUnits[x].x){
-          combat(playerOneUnits[i],playerTwoUnits[x])
+  // BEGIN 2.2 Remove Already Dead Units
+    function removeDeadUnits(){
+      for (i =0; i < deadUnits.length; i++){
+        deadUnits[i].deathCounter += gameLoopTime;
+        if (deadUnits[i].deathCounter > deadExpireTime){
+          var spliceAll = allUnits.indexOf(deadUnits[i]);
+          allUnits[spliceAll].htmlNode.remove();
+          allUnits.splice(spliceAll,1);
+          deadUnits.splice(i,1);
+          i --;
         }
       }
     }
-    // Now splice out all the units to kill
-    // Take them out of each player array, thus letting them still be affect by movement animations but not including in combat checks
-    for (i = 0; i <deadUnits.length;i++){
-      var splicePlayerOne = playerOneUnits.indexOf(deadUnits[i]);
-      var splicePlayerTwo = playerTwoUnits.indexOf(deadUnits[i]);
-      if (splicePlayerOne !== -1){
-        playerOneUnits.splice(splicePlayerOne,1)
+  // END 2.2 Remove Already Dead Units
+
+  // BEGIN 2.3 Check for collisions with units and tower
+    // denis
+    function collisionCheck(){
+      for (i = 0; i < playerOneUnits.length; i++){
+        for (x = 0; x < playerTwoUnits.length; x++){
+          if(playerOneUnits[i].x + halfSpriteWidth >= playerTwoUnits[x].x){
+            combat(playerOneUnits[i],playerTwoUnits[x])
+          }
+        }
       }
-      else if (splicePlayerTwo !== -1){
-        playerTwoUnits.splice(splicePlayerTwo,1);
+      // Now splice out all the units to kill
+      // Take them out of each player array, thus letting them still be affect by movement animations but not including in combat checks
+      for (i = 0; i <deadUnits.length;i++){
+        var splicePlayerOne = playerOneUnits.indexOf(deadUnits[i]);
+        var splicePlayerTwo = playerTwoUnits.indexOf(deadUnits[i]);
+        if (splicePlayerOne !== -1){
+          playerOneUnits.splice(splicePlayerOne,1)
+        }
+        else if (splicePlayerTwo !== -1){
+          playerTwoUnits.splice(splicePlayerTwo,1);
+        }
+        else {
+        }
       }
-      else {
+
+      //Now check for powerupcollisions
+      for (i=0; i < allUnits.length; i++){
+        for (j=0; j < powerupArray.length; j++){
+          if(allUnits[i].status !== "dead" && allUnits[i].x > powerupArray[j].x - halfSpriteWidth && allUnits[i].x < powerupArray[j].x + halfSpriteWidth){
+            //remove the powerup node, remove it from array and give the player whose unit touched it the bonus
+            getPowerup.play()
+            powerupArray[j].htmlNode.remove();
+            powerupArray.splice(j,1);
+            window[allUnits[i].player+'Cooldown'] *= powerupBonus;
+          }
+        }
+      }
+
+    }
+
+    // 2.3.1 Once a collision is detected, resolve it
+
+    function combat(playerOneUnit,playerTwoUnit){
+      // Viking beat cyclops, cyclops beat demon, demon beat viking. tie do nothing
+      var playerOneType = playerOneUnit.type;
+      var playerTwoType = playerTwoUnit.type;
+      if (playerOneType === playerTwoType){
+        // do nothing
+      }
+      // 3 possibilities now, each with two sub possibilties
+      else if (playerOneType === 'viking'){
+        //Check player twoType
+        if (playerTwoType === 'cyclops'){
+          kill(playerTwoUnit);
+        } else{
+          kill(playerOneUnit);
+        }
+      }
+      else if (playerOneType === 'cyclops'){
+        //Check player twoType
+        if (playerTwoType === 'viking'){
+          kill(playerOneUnit);
+        } else{
+          kill(playerTwoUnit);
+        }
+      }
+      // We now know that playerOneType must be demon
+      else{
+        if (playerTwoType === 'viking'){
+          kill(playerTwoUnit);
+        } else{
+          kill(playerOneUnit);
+        }
       }
     }
-  }
 
-  function combat(playerOneUnit,playerTwoUnit){
-    // Viking beat cyclops, cyclops beat demon, demon beat viking. tie do nothing
-    var playerOneType = playerOneUnit.type;
-    var playerTwoType = playerTwoUnit.type;
-    if (playerOneType === playerTwoType){
-      // do nothing
+    // 2.3.2 Once combat is resolved, 'kill' the loser
+
+    function kill(combatLoser){
+      // label as dead for collision check purposes, add class for CSS animation purposes, and move to fallen array for delete check purposes
+      var screamNum = Math.floor(Math.random() * (6 - 1 + 1)) + 1;
+      var deathScream = new Audio("sounds/scream"+screamNum+".mp3") ;
+      deathScream.play();
+      combatLoser.htmlNode.addClass('death');
+      combatLoser.status = 'dead';
+      deadUnits.push(combatLoser);
     }
-    // 3 possibilities now, each with two sub possibilties
-    else if (playerOneType === 'viking'){
-      //Check player twoType
-      if (playerTwoType === 'cyclops'){
-        kill(playerTwoUnit);
-      } else{
-        kill(playerOneUnit);
+
+    //2.3.x Check for the opponents tower being captured
+
+    function captureCheck(){
+      if (playerOneUnits.length > 0){
+        if ((playerOneUnits[0].x + halfSpriteWidth) >= playerTwoSpawn){
+        playerTwoDamage ++;
+        $('#p2h'+playerTwoDamage).addClass('fadedlogo');
+        var position = allUnits.indexOf(playerOneUnits[0]);
+          allUnits[position].htmlNode.remove();
+          allUnits.splice(position,1);
+          playerOneUnits.splice(0,1);
+          captureSound.play();
+        }
+      }
+      if (playerTwoUnits.length > 0){
+        if ((playerTwoUnits[0].x - halfSpriteWidth) <= playerOneSpawn){
+          playerOneDamage ++;
+          $('#p1h'+playerOneDamage).addClass('fadedlogo');
+          var position = allUnits.indexOf(playerTwoUnits[0]);
+            allUnits[position].htmlNode.remove();
+            allUnits.splice(position,1);
+            playerTwoUnits.splice(0,1);
+            captureSound.play();
+        }
       }
     }
-    else if (playerOneType === 'cyclops'){
-      //Check player twoType
-      if (playerTwoType === 'viking'){
-        kill(playerOneUnit);
-      } else{
-        kill(playerTwoUnit);
+  // END 2.3 Check for collisions with units and tower
+
+  // BEGIN 2.4 Check for winner
+
+    function checkForWinner(){
+      //if player two damage or player one damage = 3 then game is over, declare winner
+      var $winner = '';
+      if(playerOneDamage >= 3 || playerTwoDamage >= 3){
+        if(playerOneDamage >= 3){
+          $winner = $('<h3>Player Two Wins!!</h3>');
+        }else{
+          $winner = $('<h3>Player One Wins!!</h3>');
+        }
+        $('#menu').prepend($winner);
+        $('#menu').removeClass('hidden')
+        clearInterval(gameInterval);
       }
     }
-    // We now know that playerOneType must be demon
-    else{
-      if (playerTwoType === 'viking'){
-        kill(playerTwoUnit);
-      } else{
-        kill(playerOneUnit);
+
+    document.getElementById("resetButton").addEventListener("click", function(){
+      // Delete all nodes
+      for (i = 0; i < allUnits.length; i++){
+        allUnits[i].htmlNode.remove();
+      }
+      for (j = 0; j < powerupArray.length; j++){
+        powerupArray[j].htmlNode.remove();
+      }
+      // Empty all unit arrays
+      allUnits = [];
+      playerOneUnits = [];
+      playerTwoUnits = [];
+      deadUnits = [];
+      powerupArray = [];
+      // Reset game timer
+      gameTimer = 0;
+      //Reset Cooldowns
+      playerOnevikingCooldown = 0;
+      playerOnecyclopsCooldown = 0;
+      playerOnedemonCooldown = 0;
+      playerTwovikingCooldown = 0;
+      playerTwocyclopsCooldown = 0;
+      playerTwodemonCooldown = 0;
+      playerOneCooldown = defaultUnitCooldown;
+      playerTwoCooldown = defaultUnitCooldown;
+      //Reset GUI
+      $('.fadedlogo').removeClass('fadedlogo')
+      // Reset game accelerator
+      gameAccelerator = 1;
+      // Reset player damagers
+      playerOneDamage = 0;
+      playerTwoDamage = 0;
+      // Rehide menu
+      $('#menu').addClass('hidden')
+      //Delete previous winner display
+      $('#menu h3').remove();
+      //Re-interval the game
+      gameInterval = setInterval(gameLoop, gameLoopTime);
+      //,freqOfLightningCheck);
+    });
+  // END 2.4
+
+  // BEGIN 2.5 Update cooldowns
+    function updateCooldowns(){
+      playerOnevikingCooldown = Math.max(0,playerOnevikingCooldown-gameLoopTime);
+      playerOnecyclopsCooldown = Math.max(0,playerOnecyclopsCooldown-gameLoopTime);
+      playerOnedemonCooldown = Math.max(0,playerOnedemonCooldown-gameLoopTime);
+      playerTwovikingCooldown = Math.max(0,playerTwovikingCooldown-gameLoopTime);
+      playerTwocyclopsCooldown = Math.max(0,playerTwocyclopsCooldown-gameLoopTime);
+      playerTwodemonCooldown = Math.max(0,playerTwodemonCooldown-gameLoopTime);
+
+      // Update logos in GUI
+      var updateArray = ['playerOneviking','playerOnecyclops','playerOnedemon','playerTwoviking','playerTwocyclops','playerTwodemon']
+
+      for (i=0;i<updateArray.length;i++){
+        if (window[updateArray[i]+'Cooldown'] === 0){
+          if($('#'+updateArray[i]).hasClass('fadedlogo')){
+            $('#'+updateArray[i]).removeClass("fadedlogo")
+            cooldownOver.play();
+          }
+        }
       }
     }
-  }
+  // END 2.5 Update cooldowns
 
-  function kill(theSlain){
-    // label as dead for collision check purposes, add class for CSS animation purposes, and move to fallen array for delete check purposes
-    theSlain.htmlNode.addClass('death');
-    theSlain.status = 'dead';
-    deadUnits.push(theSlain);
-  }
 
-  function burnTheDead(){
-    for (i =0; i < deadUnits.length; i++){
-      deadUnits[i].deathCounter += 20;
-      if (deadUnits[i].deathCounter > 1000){
-        var spliceAll = allUnits.indexOf(deadUnits[i]);
-        allUnits[spliceAll].htmlNode.remove();
-        allUnits.splice(spliceAll,1);
-        deadUnits.splice(i,1);
-        i --;
+  // BEGIN 2.6 Powerups
+
+    var powerupInfo = {
+      x: 0,
+      y: yAxisPlane,
+    }
+
+    var Powerup = function (powerupInfo) {
+      var $newpowerup = $('<div class="powerup"></div>');
+      this.x = powerupInfo.x;
+      this.y = powerupInfo.y;
+      this.htmlNode = $newpowerup
+      $playArea.append($newpowerup);
+      $newpowerup.css("left",this.x);
+      $newpowerup.css("top",this.y);
+    }
+
+    var placePowerups = function(){
+      if (powerupArray.length < 3){
+        //Random check to place powerup
+        if (Math.random() < (chanceOfPowerup * gameAccelerator)){
+          //Generate random x-cordinate to place
+          powerupInfo.x = Math.floor(Math.random() * (powerupSpawnMaxX - powerupSpawnMinX + 1)) + powerupSpawnMinX;
+          var createdPowerup = new Powerup(powerupInfo);
+          powerupArray.push(createdPowerup);
+          powerupSound.play()
+        }
       }
     }
-  }
 
-  function updateCooldowns(){
-    playerOnevikingCooldown = Math.max(0,playerOnevikingCooldown-20);
-    playerOnecyclopsCooldown = Math.max(0,playerOnecyclopsCooldown-20);
-    playerOnedemonCooldown = Math.max(0,playerOnedemonCooldown-20);
-    playerTwovikingCooldown = Math.max(0,playerTwovikingCooldown-20);
-    playerTwocyclopsCooldown = Math.max(0,playerTwocyclopsCooldown-20);
-    playerTwodemonCooldown = Math.max(0,playerTwodemonCooldown-20);
 
-    // Update logos in GUI
-    var updateArray = ['playerOneviking','playerOnecyclops','playerOnedemon','playerTwoviking','playerTwocyclops','playerTwodemon']
+//////////////END GAME LOOP FUNCTIONS AND LOGIC////////////////////
 
-    for (i=0;i<updateArray.length;i++){
-      if (window[updateArray[i]+'Cooldown'] === 0){
-        $('#'+updateArray[i]).removeClass("fadedlogo")
-      }
-    }
-  }
-// END Unit creation and collision logic
-
-// BEGIN 4.0 Weather Effects
+/////////////////////BEGIN WEATHER EFFECTS////////////////////////
   // Rain
-    // number of drops created.
-    var nbDrop = 600;
 
     // function to generate a random number range.
     function randRange( minNum, maxNum) {
@@ -280,22 +483,21 @@
     // function to generate drops
     function createRain() {
 
-      for( i=1;i<nbDrop;i++) {
-      var dropLeft = randRange(0,1100);
-      var dropTop = randRange(-1000,1000);
+      for( i=1;i<numberRainDrops;i++) {
+      var dropLeft = randRange(leftRainLimit,rightRainLimit);
+      var dropTop = randRange(bottomRainLimit,topRainLimit);
 
       $('.rain').append('<div class="drop" id="drop'+i+'"></div>');
       $('#drop'+i).css('left',dropLeft);
       $('#drop'+i).css('top',dropTop);
       }
-
     }
-    // Make it rain
-    createRain();
 
   //Lightning and thunder
-    setInterval(function(){
-      if( Math.random()<.15){
+
+
+    function thunderAndLightning(){
+      if( Math.random()<chanceOfLightning){
         $('.weather').addClass('chill-lightning-flash');
         // play thunder bolt
         if (Math.random() >.5){
@@ -307,21 +509,7 @@
         setInterval(function(){
           if( $('.weather').hasClass('chill-lightning-flash')){
             $('.weather').removeClass('chill-lightning-flash')}
-          },150);
+          },durOfLightingFlash);
       }
-    },1000);
-// END Weather effects
-
-// var snd1  = new Audio();
-// var src1  = document.createElement("source");
-// src1.type = "audio/mpeg";
-// src1.src  = "audio/Dombra.mp3";
-// snd1.appendChild(src1);
-
-// var snd2  = new Audio();
-// var src2  = document.createElement("source");
-// src2.type = "audio/mpeg";
-// src2.src  = "audio/(TESBIHAT).mp3";
-// snd2.appendChild(src2);
-
-// snd1.play(); snd2.play(); // Now both will play at the same time
+    }
+/////////////////////END WEATHER EFFECTS////////////////////////
