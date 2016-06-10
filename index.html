@@ -16,7 +16,10 @@
     <!-- Apparently: If your renderings seem distorted, try specifying your width and height attributes explicitly in the <canvas> attributes, and not using CSS. -->
      <div id="opponentSelect" width="1100" height="400">
       <input id="twoPlayerButton" class="btn btn-default" type="submit" value="Two Players">
-      <input id="computerPlayerButton" class="btn btn-default" type="submit" value="Play Against Computer">
+      <input id="computerEasyButton" class="btn btn-default" type="submit" value="vs Easy Computer">
+      <input id="computerHardButton" class="btn btn-default" type="submit" value="vs Hard Computer">
+      <input id="survivalModeButton" class="btn btn-default" type="submit" value="Survival Mode">
+      <input id="insanityModeButton" class="btn btn-default" type="submit" value="Insanity Mode">
     </div>
     <img id="instructionsIMG" class="hidden" src="images/instructions.png" width="1100" height="400">
     <div id="playArea" class="hidden" width="1100" height="400">
@@ -37,6 +40,9 @@
           <img id="playerOnedemon" src="images/demonHUD.png">
         </div>
       </div>
+      <div id="scoreboard" class="HUD">
+
+      </div>
       <div id="playerTwoHUD" class="HUD">
         <div class="logos">
           <img id="playerTwoviking" src="images/vikingHUD.png">
@@ -52,16 +58,6 @@
 
       <img id="towerLeft" src="images/tower2.png" alt="towerLeft">
       <img id="towerRight" src="images/tower2.png" alt="towerLeft">
-    </div>
-    <div id="instructions">
-      <h2>Instructions</h2>
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-        quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-        cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-        proident, sunt in culpa qui officia deserunt mollit anim id est laborum. </p>
-      </h2>
     </div>
   </div>
   <script src = "scripts/main.js"></script>

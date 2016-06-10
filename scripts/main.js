@@ -23,6 +23,8 @@
   var yAxisPlane = 235; // // Note that Y is fixed since on a flat plane
   var gameInterval = null;
   var opponent = '';
+  var survivalMode = 0; //is surivival mode?
+  var survivalModeScore = 0;
 
   // Unit movement (values in pixels)
   var aliveXSpeed = 1;
@@ -200,11 +202,37 @@ $('#twoPlayerButton').one('click', function(){
   opponent = 'playerTwo'
 })
 
-$('#computerPlayerButton').one('click', function(){
+$('#computerEasyButton').one('click', function(){
   $('#opponentSelect').addClass('hidden');
   $('#instructionsIMG').removeClass('hidden');
   opponent = 'computer'
+  playerTwoCooldown = 1800;
+})
+
+$('#computerHardButton').one('click', function(){
+  $('#opponentSelect').addClass('hidden');
+  $('#instructionsIMG').removeClass('hidden');
+  opponent = 'computer';
   playerTwoCooldown = 1000;
+})
+
+$('#survivalModeButton').one('click', function(){
+  $('#opponentSelect').addClass('hidden');
+  $('#instructionsIMG').removeClass('hidden');
+  opponent = 'computer'
+  survivalMode = 1;
+  var $score = $('<h3 id="score">Score: 0</h3>');
+  $('#scoreboard').append($score);
+  gameAccelerator = 2;
+  playerTwoCooldown = 500;
+})
+
+$('#insanityModeButton').one('click', function(){
+  $('#opponentSelect').addClass('hidden');
+  $('#instructionsIMG').removeClass('hidden');
+  opponent = 'playerTwo'
+  playerOneCooldown = 0;
+  playerTwoCooldown = 0;
 })
 
 $('#instructionsIMG').one('click', function (){
@@ -363,6 +391,10 @@ $('#instructionsIMG').one('click', function (){
       combatLoser.htmlNode.addClass('death');
       combatLoser.status = 'dead';
       deadUnits.push(combatLoser);
+      if (survivalMode = 1 && combatLoser.player === "playerTwo"){
+        survivalModeScore ++;
+        $('#score').html('Score: '+survivalModeScore);
+      }
     }
 
     //2.3.x Check for the opponents tower being captured

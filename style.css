@@ -56,7 +56,11 @@
 }
 
 #opponentSelect .btn:first-child{
-  margin-top: 100px;
+  margin-top: 50px;
+}
+
+#scoreboard{
+  left: 400px;
 }
 
   #playArea, #instructionsIMG, #opponentSelect{
