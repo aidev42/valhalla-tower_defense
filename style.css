@@ -27,11 +27,13 @@
 
 /*BEGIN General page styling*/
   body{
-    background-color: tan;
+    background-image: url(images/main-background.jpg);
+    background-size:cover;
   }
 
   h1{
     font-family: Norse-Bold;
+    color: white;
     font-size: 3em;
     width: 600px;
     display: block;
@@ -170,6 +172,7 @@ footer{
   text-align: center;
   bottom: 20px;
   margin-top: 50px;
+  color: white;
 }
 
 /*END General page styling*/
