@@ -166,7 +166,11 @@
     opacity: 0.4;
   }
 
-
+footer{
+  text-align: center;
+  bottom: 20px;
+  margin-top: 50px;
+}
 
 /*END General page styling*/
 
