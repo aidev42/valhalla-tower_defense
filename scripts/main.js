@@ -58,10 +58,12 @@
   var gameAccelerator = 1; // As game timer increases pace of unit movements and powerup drops accelerates
 
   //Static sound effects
-  var captureSound = new Audio("sounds/capture.wav") ;
-  var cooldownOver = new Audio("sounds/cooldownOver.wav")
-  var powerupSound = new Audio("sounds/powerup.wav")
-  var getPowerup = new Audio("sounds/getPowerup.wav")
+  var captureSound = new Audio("sounds/capture.wav");
+  var cooldownOver = new Audio("sounds/cooldownOver.wav");
+  var powerupSound = new Audio("sounds/powerup.wav");
+  var getPowerup = new Audio("sounds/getPowerup.wav");
+  var thunderBolt = new Audio('sounds/thunder1.wav');
+  var createSound = new Audio("sounds/createUnit.wav");
 
   // Weather effects
   var numberRainDrops = 600
@@ -105,10 +107,12 @@
       $playArea.append($newUnit); // Append the new element to the playArea and position it at starting point
       $newUnit.css("left",this.x);
       $newUnit.css("top",this.y);
-      $newUnit.sprite({fps: 12, no_of_frames: 8}); //using 'Spritely' plugin
+      //$newUnit.sprite({fps: 12, no_of_frames: 8}); //using 'Spritely' plugin
     };
 
     // Now we are ready to get user input. According to key press we update the object template with values unique to that key and then call a function to pass the template to the constructor
+
+    //Player one units
     $(document).on('keydown', function(e){
       switch (e.keyCode) {
         // Player 1's units
@@ -121,7 +125,11 @@
         case 69: //'e' key
             createUnit('playerOne','demon');
           break;
-      };
+      }
+    });
+
+    //Player two units
+    $(document).on('keydown', function(e){
       if (opponent === 'playerTwo'){
         switch (e.keyCode) {
           // Player 2's units
@@ -134,12 +142,17 @@
           case 80: //'p' key
               createUnit('playerTwo','demon');
             break;
-        };
+        }
       }
     });
 
     // BEGIN AI LOGIC
     function createAIUnits(){
+      aiCounterHumanPlayer();
+      aiRandomlyCreate();
+    }
+
+    function aiCounterHumanPlayer(){
       if (playerOneUnits.length > 0){
         var enemyType = playerOneUnits[0].type;
         if (enemyType === 'viking'){
@@ -150,6 +163,9 @@
           createUnit('playerTwo','cyclops')
         }
       }
+    }
+
+    function aiRandomlyCreate(){
       if(Math.random()<.01){
         var unitRand = Math.random()
         if (unitRand <= .333){
@@ -177,11 +193,11 @@
         if (unitInfo.player === 'playerOne'){
           playerArray = playerOneUnits;
           unitInfo.x = playerOneSpawn;
-          var createSound = new Audio("sounds/createUnit.wav") ;
+          createSound = new Audio("sounds/createUnit.wav") ;
         } else{
           playerArray = playerTwoUnits;
           unitInfo.x = playerTwoSpawn;
-          var createSound = new Audio("sounds/createUnit2.wav") ;
+          createSound = new Audio("sounds/createUnit2.wav") ;
         }
         var createdUnit = new Unit(unitInfo);
         playerArray.push(createdUnit);
@@ -197,43 +213,44 @@
 
 /////////////////////// BEGIN GAME LOOP//////////////////////
 $('#twoPlayerButton').one('click', function(){
-  $('#opponentSelect').addClass('hidden');
-  $('#instructionsIMG').removeClass('hidden');
   opponent = 'playerTwo'
+  modeSelected()
 })
 
 $('#computerEasyButton').one('click', function(){
-  $('#opponentSelect').addClass('hidden');
-  $('#instructionsIMG').removeClass('hidden');
-  opponent = 'computer'
   playerTwoCooldown = 1800;
+  opponent = 'computer';
+  modeSelected()
 })
 
 $('#computerHardButton').one('click', function(){
-  $('#opponentSelect').addClass('hidden');
-  $('#instructionsIMG').removeClass('hidden');
-  opponent = 'computer';
   playerTwoCooldown = 1000;
+  opponent = 'computer';
+  modeSelected()
 })
 
 $('#survivalModeButton').one('click', function(){
-  $('#opponentSelect').addClass('hidden');
-  $('#instructionsIMG').removeClass('hidden');
   opponent = 'computer'
   survivalMode = 1;
   var $score = $('<h3 id="score">Score: 0</h3>');
   $('#scoreboard').append($score);
   gameAccelerator = 2;
   playerTwoCooldown = 500;
+  modeSelected()
 })
 
 $('#insanityModeButton').one('click', function(){
-  $('#opponentSelect').addClass('hidden');
-  $('#instructionsIMG').removeClass('hidden');
   opponent = 'playerTwo'
   playerOneCooldown = 0;
   playerTwoCooldown = 0;
+  gameAccelerator = 5;
+  modeSelected()
 })
+
+function modeSelected(){
+  $('#opponentSelect').addClass('hidden');
+  $('#instructionsIMG').removeClass('hidden');
+}
 
 $('#instructionsIMG').one('click', function (){
   $('#instructionsIMG').addClass('hidden');
@@ -253,6 +270,7 @@ $('#instructionsIMG').one('click', function (){
     moveUnits(); // 2.1 move existing units on map
     removeDeadUnits(); // 2.2 remove dead units
     collisionCheck(); // 2.3 check for collision of units and tower
+    powerupPickups();
     captureCheck(); // 2.3.x
     checkForWinner(); // 2.4 if winner declare and reset
     updateCooldowns(); // 2.5 update cooldowns
@@ -287,7 +305,7 @@ $('#instructionsIMG').one('click', function (){
         allUnits[i].htmlNode.css("left",allUnits[i].x);
         // allUnits[i].checkCollision (dennis' proposed fix)
       }
-    };
+    }
   /// END 2.1 Move Units
 
   // BEGIN 2.2 Remove Already Dead Units
@@ -315,6 +333,10 @@ $('#instructionsIMG').one('click', function (){
           }
         }
       }
+      spliceDeadUnits()
+    }
+
+    function spliceDeadUnits(){
       // Now splice out all the units to kill
       // Take them out of each player array, thus letting them still be affect by movement animations but not including in combat checks
       for (i = 0; i <deadUnits.length;i++){
@@ -326,10 +348,13 @@ $('#instructionsIMG').one('click', function (){
         else if (splicePlayerTwo !== -1){
           playerTwoUnits.splice(splicePlayerTwo,1);
         }
-        else {
+        else{
+          console.log('Error splicing dead units')
         }
       }
+    }
 
+    function powerupPickups(){
       //Now check for powerupcollisions
       for (i=0; i < allUnits.length; i++){
         for (j=0; j < powerupArray.length; j++){
@@ -342,7 +367,6 @@ $('#instructionsIMG').one('click', function (){
           }
         }
       }
-
     }
 
     // 2.3.1 Once a collision is detected, resolve it
@@ -351,11 +375,8 @@ $('#instructionsIMG').one('click', function (){
       // Viking beat cyclops, cyclops beat demon, demon beat viking. tie do nothing
       var playerOneType = playerOneUnit.type;
       var playerTwoType = playerTwoUnit.type;
-      if (playerOneType === playerTwoType){
-        // do nothing
-      }
-      // 3 possibilities now, each with two sub possibilties
-      else if (playerOneType === 'viking'){
+      // 3 possibilities excluding tie, each with two sub possibilties
+      if (playerOneType === 'viking'){
         //Check player twoType
         if (playerTwoType === 'cyclops'){
           kill(playerTwoUnit);
@@ -391,7 +412,7 @@ $('#instructionsIMG').one('click', function (){
       combatLoser.htmlNode.addClass('death');
       combatLoser.status = 'dead';
       deadUnits.push(combatLoser);
-      if (survivalMode = 1 && combatLoser.player === "playerTwo"){
+      if (survivalMode === 1 && combatLoser.player === "playerTwo"){
         survivalModeScore ++;
         $('#score').html('Score: '+survivalModeScore);
       }
@@ -400,11 +421,12 @@ $('#instructionsIMG').one('click', function (){
     //2.3.x Check for the opponents tower being captured
 
     function captureCheck(){
+      var position = 0;
       if (playerOneUnits.length > 0){
         if ((playerOneUnits[0].x + halfSpriteWidth) >= playerTwoSpawn){
         playerTwoDamage ++;
         $('#p2h'+playerTwoDamage).addClass('fadedlogo');
-        var position = allUnits.indexOf(playerOneUnits[0]);
+          position = allUnits.indexOf(playerOneUnits[0]);
           allUnits[position].htmlNode.remove();
           allUnits.splice(position,1);
           playerOneUnits.splice(0,1);
@@ -415,7 +437,7 @@ $('#instructionsIMG').one('click', function (){
         if ((playerTwoUnits[0].x - halfSpriteWidth) <= playerOneSpawn){
           playerOneDamage ++;
           $('#p1h'+playerOneDamage).addClass('fadedlogo');
-          var position = allUnits.indexOf(playerTwoUnits[0]);
+            position = allUnits.indexOf(playerTwoUnits[0]);
             allUnits[position].htmlNode.remove();
             allUnits.splice(position,1);
             playerTwoUnits.splice(0,1);
@@ -512,7 +534,7 @@ $('#instructionsIMG').one('click', function (){
 
     var powerupInfo = {
       x: 0,
-      y: yAxisPlane,
+      y: yAxisPlane
     }
 
     var Powerup = function (powerupInfo) {
@@ -570,9 +592,9 @@ $('#instructionsIMG').one('click', function (){
         $('.weather').addClass('chill-lightning-flash');
         // play thunder bolt
         if (Math.random() >.5){
-          var thunderBolt = new Audio('sounds/thunder1.wav');
+          thunderBolt = new Audio('sounds/thunder1.wav');
         } else{
-          var thunderBolt = new Audio('sounds/thunder2.wav');
+          thunderBolt = new Audio('sounds/thunder2.wav');
         }
         thunderBolt.play();
         setInterval(function(){
