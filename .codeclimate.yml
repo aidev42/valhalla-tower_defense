@@ -25,4 +25,3 @@ ratings:
   - "**.py"
   - "**.rb"
 exclude_paths: []
-  - "scripts/jquery.spritely.js"
