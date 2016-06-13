@@ -10,6 +10,8 @@ engines:
       - javascript
       - python
       - php
+    exclude_fingerprints:
+    - f2cda0ae2d7d219d51832e2dda2f5268
   eslint:
     enabled: true
   fixme:
